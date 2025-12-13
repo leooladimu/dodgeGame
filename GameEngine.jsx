@@ -425,7 +425,7 @@ const DodgeGame = () => {
         <p><strong>Score: {score}/{WIN_SCORE}</strong></p>
         <div style={styles.controls}>
           <h3>How to Play</h3>
-          <p>Move your player (blue square) to collect coins (green) and avoid enemies (red 6-pointed stars).</p>
+          <p>Move your player (tan rune) to collect coins (green) and avoid enemies (red stars).</p>
           <p>
             <code style={styles.key}>←</code> <code style={styles.key}>→</code>{' '}
             <code style={styles.key}>↑</code> <code style={styles.key}>↓</code> or{' '}
