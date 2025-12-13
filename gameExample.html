@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Game Engine</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #111;
+            color: #fff;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            margin-bottom: 10px;
+            color: #0170ff;
+        }
+        #gameContainer {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        canvas {
+            display: block;
+            background: #222;
+            border: 3px solid #0170ff;
+            cursor: none;
+        }
+        #info {
+            text-align: center;
+            max-width: 800px;
+            line-height: 1.6;
+            color: #aaa;
+            font-size: 14px;
+        }
+        .controls {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        .controls h3 {
+            margin-top: 0;
+            color: #0170ff;
+        }
+        .controls p {
+            margin: 5px 0;
+        }
+        .key {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 2D Game Engine</h1>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <div id="info">
+        <p id="score">Score: 0</p>
+        <div class="controls">
+            <h3>How to Play</h3>
+            <p>Move your player (tan rune ᛉ) to collect cultural memes (green dollars) and avoid enemies (red stars).</p>
+            <p><span class="key">←</span> <span class="key">→</span> <span class="key">↑</span> <span class="key">↓</span> or <span class="key">WASD</span> to move</p>
+            <p>Collect cultural memes to win! Collide with enemies to lose.</p>
+        </div>
+    </div>
+
+    <script src="gameEngine.js"></script>
+    <script>
+        // Create game engine
+        const engine = new GameEngine('gameCanvas', 800, 600);
+
+        // Game state
+        let score = 0;
+        let gameOver = false;
+        let won = false;
+        const WIN_SCORE = 10;
+
+        // Create player (Algiz rune ᛉ)
+        const player = engine.addSprite(
+            new Sprite(engine.width / 2 - 16, engine.height / 2, 32, 32, '#D2B48C')
+        );
+        player.tag = 'player';
+        player.speed = 300; // pixels per second
+        // Render player as Algiz rune (ᛉ)
+        player.renderShape = 'rune';
+
+        // Create coins
+        function spawnCoin() {
+            const coin = engine.addSprite(
+                new Sprite(
+                    Math.random() * (engine.width - 20),
+                    Math.random() * (engine.height - 20),
+                    20,
+                    20,
+                    '#00ff00'
+                )
+            );
+            coin.tag = 'meme';
+            coin.renderShape = 'dollar';
+            return coin;
+        }
+
+        // Create enemies
+        function spawnEnemy() {
+            const enemy = engine.addSprite(
+                new Sprite(
+                    Math.random() * (engine.width - 24),
+                    Math.random() * (engine.height - 24),
+                    24,
+                    24,
+                    '#ff0101'
+                )
+            );
+            enemy.tag = 'enemy';
+            enemy.speed = 150 + Math.random() * 100;890 
+            enemy.dirX = Math.random() > 0.5 ? 1 : -1;
+            enemy.dirY = Math.random() > 0.5 ? 1 : -1;
+            // Render enemies as 6-pointed stars
+            enemy.renderShape = 'star';
+            return enemy;
+        }
+
+        // Initial setup
+        for (let i = 0; i < 5; i++) spawnCoin();
+        for (let i = 0; i < 3; i++) spawnEnemy();
+
+        // Override update to add game logic
+        const originalUpdate = engine.update.bind(engine);
+        engine.update = function (dt) {
+            if (gameOver || won) return;
+
+            // Player input
+            if (engine.isKeyPressed('arrowleft') || engine.isKeyPressed('a')) {
+                player.vel.x = -player.speed;
+            } else if (engine.isKeyPressed('arrowright') || engine.isKeyPressed('d')) {
+                player.vel.x = player.speed;
+            } else {
+                player.vel.x = 0;
+            }
+
+            if (engine.isKeyPressed('arrowup') || engine.isKeyPressed('w')) {
+                player.vel.y = -player.speed;
+            } else if (engine.isKeyPressed('arrowdown') || engine.isKeyPressed('s')) {
+                player.vel.y = player.speed;
+            } else {
+                player.vel.y = 0;
+            }
+
+            // Update sprites
+            originalUpdate(dt);
+
+            // Clamp player to bounds
+            player.pos.x = Math.max(0, Math.min(player.pos.x, engine.width - player.width));
+            player.pos.y = Math.max(0, Math.min(player.pos.y, engine.height - player.height));
+
+            // Update enemies (simple AI: bounce around)
+            const enemies = engine.findSpritesWithTag('enemy');
+            for (const enemy of enemies) {
+                enemy.vel.x = enemy.dirX * enemy.speed;
+                enemy.vel.y = enemy.dirY * enemy.speed;
+
+                // Bounce off walls
+                if (enemy.pos.x <= 0 || enemy.pos.x + enemy.width >= engine.width) {
+                    enemy.dirX *= -1;
+                }
+                if (enemy.pos.y <= 0 || enemy.pos.y + enemy.height >= engine.height) {
+                    enemy.dirY *= -1;
+                }
+            }
+
+            // Collision: player vs coins
+            const coins = engine.findSpritesWithTag('meme');
+            for (const coin of coins) {
+                if (player.collidesWith(coin)) {
+                    engine.removeSprite(coin);
+                    score++;
+                    document.getElementById('score').textContent = `Score: ${score}`;
+                    if (score >= WIN_SCORE) {
+                        won = true;
+                        document.getElementById('score').textContent = `🎉 You Won! Score: ${score}`;
+                    } else {
+                        spawnCoin();
+                    }
+                }
+            }
+
+            // Collision: player vs enemies
+            for (const enemy of enemies) {
+                if (player.collidesWith(enemy)) {
+                    gameOver = true;
+                    document.getElementById('score').textContent = `💀 Game Over! Final Score: ${score}`;
+                }
+            }
+        };
+
+        // Override render to add debug info
+        const originalRender = engine.render.bind(engine);
+        engine.render = function () {
+            originalRender();
+
+            // Draw text overlay
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 16px system-ui';
+            this.ctx.fillText(`Score: ${score}/${WIN_SCORE}`, 20, 30);
+            this.ctx.font = 'normal 12px system-ui';
+            this.ctx.fillText(`Memes: ${engine.findSpritesWithTag('meme').length}`, 20, 50);
+            this.ctx.fillText(`Enemies: ${engine.findSpritesWithTag('enemy').length}`, 20, 70);
+
+            if (gameOver) {
+                this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                this.ctx.fillStyle = '#ff0101';
+                this.ctx.font = 'bold 48px system-ui';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('GAME OVER', this.width / 2, this.height / 2);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'normal 20px system-ui';
+                this.ctx.fillText('Refresh to play again', this.width / 2, this.height / 2 + 40);
+            } else if (won) {
+                this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                this.ctx.fillStyle = '#00ff00';
+                this.ctx.font = 'bold 48px system-ui';
+                this.ctx.textAlign = 'center';
+                // Wrap text across multiple lines
+                const line1 = 'YOU WON!!';
+                const line2 = 'ALL MEMES ARE YOURS!';
+                this.ctx.fillText(line1, this.width / 2, this.height / 2 - 30);
+                this.ctx.fillText(line2, this.width / 2, this.height / 2 + 20);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'normal 20px system-ui';
+                this.ctx.fillText('Refresh to play again', this.width / 2, this.height / 2 + 60);
+            }
+        };
+
+        // Start the game
+        engine.start();
+    </script>
+</body>
+</html>
