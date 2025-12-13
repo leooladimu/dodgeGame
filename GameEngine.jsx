@@ -27,6 +27,39 @@ class Vector2 {
 }
 
 /**
+ * Particle: For visual effects
+ */
+class Particle {
+  constructor(x, y, vx, vy, color, life = 1) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+    this.size = Math.random() * 4 + 2;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vy += 200 * dt; // gravity
+    this.life -= dt;
+  }
+
+  render(ctx) {
+    const alpha = this.life / this.maxLife;
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+/**
  * Sprite: Represents a game object
  */
 class Sprite {
@@ -40,24 +73,112 @@ class Sprite {
     this.active = true;
     this.tag = 'sprite';
     this.renderShape = 'rect'; // 'rect' or 'star'
+    this.rotation = 0; // For rotation animation
+    this.scale = 1; // For pulsing animation
+    this.time = 0; // For animation timing
   }
 
   update(dt) {
     this.vel = this.vel.add(this.acc.mul(dt));
     this.pos = this.pos.add(this.vel.mul(dt));
+    this.time += dt;
+    
+    // Animate coins with pulse effect
+    if (this.tag === 'coin') {
+      this.scale = 1 + Math.sin(this.time * 4) * 0.15;
+      this.rotation += dt * 2;
+    }
+    
+    // Animate enemies with rotation
+    if (this.tag === 'enemy') {
+      this.rotation += dt * 2;
+    }
   }
 
   render(ctx) {
+    ctx.save();
+    
+    // Apply transformations
+    const cx = this.pos.x + this.width / 2;
+    const cy = this.pos.y + this.height / 2;
+    ctx.translate(cx, cy);
+    ctx.rotate(this.rotation);
+    ctx.scale(this.scale, this.scale);
+    ctx.translate(-cx, -cy);
+    
+    // Draw glow for coins
+    if (this.tag === 'coin') {
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#00ff00';
+    }
+    
+    // Draw glow for player
+    if (this.tag === 'player') {
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#D2B48C';
+    }
+    
     // If this sprite has a custom render function, use it
     if (this.renderShape === 'rune') {
       this.renderRune(ctx);
     } else if (this.renderShape === 'star') {
       this.renderStar(ctx);
+    } else if (this.tag === 'coin') {
+      this.renderCoin(ctx);
     } else {
-      // Default: render as rectangle
-      ctx.fillStyle = this.color;
+      // Default: render as rectangle with gradient
+      const gradient = ctx.createLinearGradient(
+        this.pos.x, this.pos.y,
+        this.pos.x + this.width, this.pos.y + this.height
+      );
+      gradient.addColorStop(0, this.color);
+      gradient.addColorStop(1, this.darkenColor(this.color, 0.3));
+      ctx.fillStyle = gradient;
       ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height);
     }
+    
+    ctx.restore();
+  }
+  
+  darkenColor(color, amount) {
+    // Simple color darkening
+    const num = parseInt(color.replace('#', ''), 16);
+    const r = Math.max(0, ((num >> 16) & 0xff) * (1 - amount));
+    const g = Math.max(0, ((num >> 8) & 0xff) * (1 - amount));
+    const b = Math.max(0, (num & 0xff) * (1 - amount));
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+  
+  renderCoin(ctx) {
+    // Draw a shiny coin with gradient
+    const cx = this.pos.x + this.width / 2;
+    const cy = this.pos.y + this.height / 2;
+    const radius = this.width / 2;
+    
+    // Outer glow
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.5);
+    glow.addColorStop(0, 'rgba(0, 255, 0, 0.3)');
+    glow.addColorStop(1, 'rgba(0, 255, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Main coin with gradient
+    const gradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 0, cx, cy, radius);
+    gradient.addColorStop(0, '#88ff88');
+    gradient.addColorStop(0.5, '#00ff00');
+    gradient.addColorStop(1, '#006600');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.arc(cx - radius * 0.3, cy - radius * 0.3, radius * 0.3, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   renderRune(ctx) {
@@ -79,7 +200,13 @@ class Sprite {
     const cy = this.pos.y + this.height / 2;
     const radius = this.width / 2; // Use width as radius reference
 
-    ctx.fillStyle = this.color; // Set the color before drawing
+    // Create gradient for star
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    gradient.addColorStop(0, '#ff6666');
+    gradient.addColorStop(0.5, '#ff0101');
+    gradient.addColorStop(1, '#aa0000');
+    ctx.fillStyle = gradient;
+    
     ctx.beginPath();
     for (let i = 0; i < 12; i++) {
       const angle = (i * Math.PI) / 6; // 6 points = 60 degrees apart
@@ -94,6 +221,11 @@ class Sprite {
       }
     }
     ctx.closePath();
+    ctx.fill();
+    
+    // Add red glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ff0101';
     ctx.fill();
   }
 
@@ -131,7 +263,9 @@ class GameEngine {
     this.width = width;
     this.height = height;
     this.sprites = [];
+    this.particles = [];
     this.input = {};
+    this.shake = 0; // Screen shake intensity
   }
 
   addSprite(sprite) {
@@ -142,6 +276,24 @@ class GameEngine {
   removeSprite(sprite) {
     const idx = this.sprites.indexOf(sprite);
     if (idx > -1) this.sprites.splice(idx, 1);
+  }
+  
+  addParticle(particle) {
+    this.particles.push(particle);
+  }
+  
+  spawnParticles(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const speed = 100 + Math.random() * 100;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - 50;
+      this.addParticle(new Particle(x, y, vx, vy, color, 0.5 + Math.random() * 0.5));
+    }
+  }
+  
+  screenShake(intensity = 10) {
+    this.shake = intensity;
   }
 
   isKeyPressed(key) {
@@ -158,21 +310,69 @@ class GameEngine {
         sprite.update(dt);
       }
     }
+    
+    // Update particles
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      this.particles[i].update(dt);
+      if (this.particles[i].life <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+    
+    // Decay screen shake
+    if (this.shake > 0) {
+      this.shake = Math.max(0, this.shake - dt * 30);
+    }
   }
 
   render(ctx) {
-    ctx.fillStyle = '#222';
+    // Apply screen shake
+    ctx.save();
+    if (this.shake > 0) {
+      const shakeX = (Math.random() - 0.5) * this.shake;
+      const shakeY = (Math.random() - 0.5) * this.shake;
+      ctx.translate(shakeX, shakeY);
+    }
+    
+    // Background with grid
+    ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, this.width, this.height);
+    
+    // Draw grid pattern
+    ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
+    ctx.lineWidth = 1;
+    const gridSize = 40;
+    for (let x = 0; x < this.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, this.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < this.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.width, y);
+      ctx.stroke();
+    }
 
+    // Render sprites
     for (const sprite of this.sprites) {
       if (sprite.active) {
         sprite.render(ctx);
       }
     }
+    
+    // Render particles
+    for (const particle of this.particles) {
+      particle.render(ctx);
+    }
+    
+    ctx.restore();
   }
 
   clear() {
     this.sprites = [];
+    this.particles = [];
   }
 
   setInput(key, pressed) {
@@ -312,6 +512,13 @@ const DodgeGame = () => {
         }
 
         engine.update(dt);
+        
+        // Player trail effect
+        if (Math.random() < 0.5 && (player.vel.x !== 0 || player.vel.y !== 0)) {
+          const px = player.pos.x + player.width / 2;
+          const py = player.pos.y + player.height / 2;
+          engine.addParticle(new Particle(px, py, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, '#D2B48C', 0.3));
+        }
 
         // Clamp player to bounds
         player.pos.x = Math.max(0, Math.min(player.pos.x, engine.width - player.width));
@@ -335,6 +542,12 @@ const DodgeGame = () => {
         const coins = engine.findSpritesWithTag('coin');
         for (const coin of coins) {
           if (player.collidesWith(coin)) {
+            // Spawn particle explosion
+            const cx = coin.pos.x + coin.width / 2;
+            const cy = coin.pos.y + coin.height / 2;
+            engine.spawnParticles(cx, cy, '#00ff00', 15);
+            engine.screenShake(5);
+            
             engine.removeSprite(coin);
             const newScore = gameStateRef.current.score + 1;
             gameStateRef.current.score = newScore;
@@ -363,6 +576,12 @@ const DodgeGame = () => {
         // Enemy collision
         for (const enemy of enemies) {
           if (player.collidesWith(enemy)) {
+            // Spawn red explosion
+            const px = player.pos.x + player.width / 2;
+            const py = player.pos.y + player.height / 2;
+            engine.spawnParticles(px, py, '#ff0101', 20);
+            engine.screenShake(15);
+            
             gameStateRef.current.gameOver = true;
             setGameOver(true);
           }
