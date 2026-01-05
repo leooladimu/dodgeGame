@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="coinGradient" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#88ff88;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00ff00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#006600;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#1a1a2e" stroke="#0170ff" stroke-width="4"/>
+  
+  <!-- Coin with gradient -->
+  <circle cx="50" cy="50" r="30" fill="url(#coinGradient)"/>
+  
+  <!-- Coin highlight -->
+  <circle cx="42" cy="42" r="10" fill="rgba(255,255,255,0.6)"/>
+  
+  <!-- Dollar sign or game symbol -->
+  <text x="50" y="62" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#004400" text-anchor="middle">🎮</text>
+</svg>
