@@ -385,12 +385,15 @@ class GameEngine {
  */
 const DodgeGame = () => {
   const canvasRef = useRef(null);
-  const engineRef = useRef(new GameEngine(800, 600));
+  const containerRef = useRef(null);
+  const engineRef = useRef(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [coinCount, setCoinCount] = useState(5);
   const [enemyCount, setEnemyCount] = useState(3);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const touchStartRef = useRef(null);
 
   const WIN_SCORE = 10;
   const gameStateRef = useRef({
@@ -400,12 +403,41 @@ const DodgeGame = () => {
     player: null,
   });
 
+  // Initialize engine with responsive size
+  useEffect(() => {
+    const updateSize = () => {
+      const maxWidth = 800;
+      const maxHeight = 600;
+      const aspectRatio = maxWidth / maxHeight;
+      
+      let width = Math.min(maxWidth, window.innerWidth - 40);
+      let height = width / aspectRatio;
+      
+      if (height > window.innerHeight - 200) {
+        height = window.innerHeight - 200;
+        width = height * aspectRatio;
+      }
+      
+      setCanvasSize({ width: Math.floor(width), height: Math.floor(height) });
+      
+      if (!engineRef.current || 
+          engineRef.current.width !== Math.floor(width) || 
+          engineRef.current.height !== Math.floor(height)) {
+        engineRef.current = new GameEngine(Math.floor(width), Math.floor(height));
+      }
+    };
+    
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   const engine = engineRef.current;
 
   // Initialize game
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !engine) return;
 
     // Clear previous sprites
     engine.clear();
@@ -456,10 +488,12 @@ const DodgeGame = () => {
       enemy.dirY = Math.random() > 0.5 ? 1 : -1;
     }
     setEnemyCount(3);
-  }, []);
+  }, [engine, canvasSize]);
 
   // Handle input
   useEffect(() => {
+    if (!engine) return;
+    
     const handleKeyDown = (e) => {
       engine.setInput(e.key, true);
     };
@@ -476,11 +510,75 @@ const DodgeGame = () => {
       document.removeEventListener('keyup', handleKeyUp);
     };
   }, [engine]);
+  
+  // Handle touch controls
+  useEffect(() => {
+    if (!engine) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleTouchStart = (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      touchStartRef.current = {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top,
+      };
+    };
+
+    const handleTouchMove = (e) => {
+      e.preventDefault();
+      if (!touchStartRef.current || !gameStateRef.current.player) return;
+      
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const touchX = touch.clientX - rect.left;
+      const touchY = touch.clientY - rect.top;
+      
+      const dx = touchX - touchStartRef.current.x;
+      const dy = touchY - touchStartRef.current.y;
+      
+      // Convert to movement direction
+      engine.setInput('arrowleft', false);
+      engine.setInput('arrowright', false);
+      engine.setInput('arrowup', false);
+      engine.setInput('arrowdown', false);
+      
+      if (Math.abs(dx) > 10) {
+        engine.setInput(dx < 0 ? 'arrowleft' : 'arrowright', true);
+      }
+      if (Math.abs(dy) > 10) {
+        engine.setInput(dy < 0 ? 'arrowup' : 'arrowdown', true);
+      }
+      
+      touchStartRef.current = { x: touchX, y: touchY };
+    };
+
+    const handleTouchEnd = (e) => {
+      e.preventDefault();
+      touchStartRef.current = null;
+      engine.setInput('arrowleft', false);
+      engine.setInput('arrowright', false);
+      engine.setInput('arrowup', false);
+      engine.setInput('arrowdown', false);
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [engine]);
 
   // Game loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !engine) return;
 
     const ctx = canvas.getContext('2d');
     let animationId;
@@ -591,34 +689,35 @@ const DodgeGame = () => {
       // Render
       engine.render(ctx);
 
-      // Draw UI
+      // Draw UI - Scale font size based on canvas size
+      const scale = Math.min(engine.width / 800, 1);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 16px system-ui';
-      ctx.fillText(`Score: ${gameStateRef.current.score}/${WIN_SCORE}`, 20, 30);
-      ctx.font = 'normal 12px system-ui';
-      ctx.fillText(`Coins: ${engine.findSpritesWithTag('coin').length}`, 20, 50);
-      ctx.fillText(`Enemies: ${engine.findSpritesWithTag('enemy').length}`, 20, 70);
+      ctx.font = `bold ${Math.floor(16 * scale)}px system-ui`;
+      ctx.fillText(`Score: ${gameStateRef.current.score}/${WIN_SCORE}`, 20 * scale, 30 * scale);
+      ctx.font = `normal ${Math.floor(12 * scale)}px system-ui`;
+      ctx.fillText(`Coins: ${engine.findSpritesWithTag('coin').length}`, 20 * scale, 50 * scale);
+      ctx.fillText(`Enemies: ${engine.findSpritesWithTag('enemy').length}`, 20 * scale, 70 * scale);
 
       if (gameStateRef.current.gameOver) {
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(0, 0, engine.width, engine.height);
         ctx.fillStyle = '#ff0101';
-        ctx.font = 'bold 48px system-ui';
+        ctx.font = `bold ${Math.floor(48 * scale)}px system-ui`;
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', engine.width / 2, engine.height / 2);
         ctx.fillStyle = '#fff';
-        ctx.font = 'normal 20px system-ui';
-        ctx.fillText('Refresh to play again', engine.width / 2, engine.height / 2 + 40);
+        ctx.font = `normal ${Math.floor(20 * scale)}px system-ui`;
+        ctx.fillText('Tap to play again', engine.width / 2, engine.height / 2 + 40 * scale);
       } else if (gameStateRef.current.won) {
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(0, 0, engine.width, engine.height);
         ctx.fillStyle = '#00ff00';
-        ctx.font = 'bold 48px system-ui';
+        ctx.font = `bold ${Math.floor(48 * scale)}px system-ui`;
         ctx.textAlign = 'center';
         ctx.fillText('YOU WIN!', engine.width / 2, engine.height / 2);
         ctx.fillStyle = '#fff';
-        ctx.font = 'normal 20px system-ui';
-        ctx.fillText('Refresh to play again', engine.width / 2, engine.height / 2 + 40);
+        ctx.font = `normal ${Math.floor(20 * scale)}px system-ui`;
+        ctx.fillText('Tap to play again', engine.width / 2, engine.height / 2 + 40 * scale);
       }
 
       animationId = requestAnimationFrame(gameLoop);
@@ -632,11 +731,11 @@ const DodgeGame = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>🎮 React Game Engine - Dodge Game</h1>
-      <div style={styles.gameContainer}>
+      <div ref={containerRef} style={styles.gameContainer}>
         <canvas
           ref={canvasRef}
-          width={800}
-          height={600}
+          width={canvasSize.width}
+          height={canvasSize.height}
           style={styles.canvas}
         />
       </div>
@@ -646,9 +745,12 @@ const DodgeGame = () => {
           <h3>How to Play</h3>
           <p>Move your player (tan rune) to collect coins (green) and avoid enemies (red stars).</p>
           <p>
-            <code style={styles.key}>←</code> <code style={styles.key}>→</code>{' '}
+            <strong>Desktop:</strong> <code style={styles.key}>←</code> <code style={styles.key}>→</code>{' '}
             <code style={styles.key}>↑</code> <code style={styles.key}>↓</code> or{' '}
-            <code style={styles.key}>WASD</code> to move
+            <code style={styles.key}>WASD</code>
+          </p>
+          <p>
+            <strong>Mobile:</strong> Drag on the canvas to move
           </p>
           <p>Collect {WIN_SCORE} coins to win! Collide with enemies to lose.</p>
         </div>
@@ -660,7 +762,7 @@ const DodgeGame = () => {
 const styles = {
   container: {
     margin: 0,
-    padding: '20px',
+    padding: '10px',
     background: '#111',
     color: '#fff',
     fontFamily: 'system-ui, sans-serif',
@@ -669,27 +771,39 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   title: {
     marginBottom: '10px',
     color: '#0170ff',
+    fontSize: 'clamp(1.2rem, 4vw, 2rem)',
+    textAlign: 'center',
   },
   gameContainer: {
     position: 'relative',
     marginBottom: '20px',
+    maxWidth: '100%',
+    touchAction: 'none',
   },
   canvas: {
     display: 'block',
     background: '#222',
     border: '3px solid #0170ff',
     cursor: 'none',
+    maxWidth: '100%',
+    height: 'auto',
+    touchAction: 'none',
   },
   info: {
     textAlign: 'center',
     maxWidth: '800px',
+    width: '100%',
     lineHeight: 1.6,
     color: '#aaa',
-    fontSize: '14px',
+    fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+    padding: '0 10px',
+    boxSizing: 'border-box',
   },
   controls: {
     marginTop: '15px',
@@ -704,6 +818,7 @@ const styles = {
     borderRadius: '3px',
     fontFamily: 'monospace',
     marginRight: '4px',
+    fontSize: 'clamp(0.7rem, 1.5vw, 0.875rem)',
   },
 };
 
