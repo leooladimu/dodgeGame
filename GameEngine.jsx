@@ -437,6 +437,7 @@ const DodgeGame = () => {
   // Initialize game
   useEffect(() => {
     const canvas = canvasRef.current;
+    const engine = engineRef.current;
     if (!canvas || !engine) return;
 
     // Clear previous sprites
@@ -488,10 +489,11 @@ const DodgeGame = () => {
       enemy.dirY = Math.random() > 0.5 ? 1 : -1;
     }
     setEnemyCount(3);
-  }, [engine, canvasSize]);
+  }, [canvasSize]);
 
   // Handle input
   useEffect(() => {
+    const engine = engineRef.current;
     if (!engine) return;
     
     const handleKeyDown = (e) => {
@@ -509,13 +511,13 @@ const DodgeGame = () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [engine]);
+  }, []);
   
   // Handle touch controls
   useEffect(() => {
-    if (!engine) return;
+    const engine = engineRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !engine) return;
 
     const handleTouchStart = (e) => {
       e.preventDefault();
@@ -573,11 +575,12 @@ const DodgeGame = () => {
       canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [engine]);
+  }, []);
 
   // Game loop
   useEffect(() => {
     const canvas = canvasRef.current;
+    const engine = engineRef.current;
     if (!canvas || !engine) return;
 
     const ctx = canvas.getContext('2d');
@@ -628,11 +631,21 @@ const DodgeGame = () => {
           enemy.vel.x = enemy.dirX * enemy.speed;
           enemy.vel.y = enemy.dirY * enemy.speed;
 
-          if (enemy.pos.x <= 0 || enemy.pos.x + enemy.width >= engine.width) {
-            enemy.dirX *= -1;
+          // Check for wall collisions and bounce
+          if (enemy.pos.x <= 0) {
+            enemy.pos.x = 0;
+            enemy.dirX = Math.abs(enemy.dirX); // Ensure positive direction
+          } else if (enemy.pos.x + enemy.width >= engine.width) {
+            enemy.pos.x = engine.width - enemy.width;
+            enemy.dirX = -Math.abs(enemy.dirX); // Ensure negative direction
           }
-          if (enemy.pos.y <= 0 || enemy.pos.y + enemy.height >= engine.height) {
-            enemy.dirY *= -1;
+          
+          if (enemy.pos.y <= 0) {
+            enemy.pos.y = 0;
+            enemy.dirY = Math.abs(enemy.dirY); // Ensure positive direction
+          } else if (enemy.pos.y + enemy.height >= engine.height) {
+            enemy.pos.y = engine.height - enemy.height;
+            enemy.dirY = -Math.abs(enemy.dirY); // Ensure negative direction
           }
         }
 
@@ -726,7 +739,7 @@ const DodgeGame = () => {
     animationId = requestAnimationFrame(gameLoop);
 
     return () => cancelAnimationFrame(animationId);
-  }, [engine]);
+  }, [canvasSize]);
 
   return (
     <div style={styles.container}>

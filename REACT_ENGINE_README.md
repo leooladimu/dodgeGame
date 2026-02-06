@@ -87,7 +87,8 @@ if (engine.isKeyPressed('arrowup')) { /* handle input */ }
 ### Change game colors
 Edit the color strings in `GameEngine.jsx`:
 ```javascript
-player = new Sprite(..., '#0170ff')  // Blue
+ 
+player = new Sprite(..., 'tan')  // tan
 coin = new Sprite(..., '#00ff00')    // Green
 enemy = new Sprite(..., '#ff0101')   // Red
 ```
