@@ -27,7 +27,7 @@ class Vector2 {
 }
 
 class Sprite {
-  constructor(x = 0, y = 0, width = 32, height = 32, color = '#fff') {
+  constructor(x = 0, y = 0, width = 32, height = 32, color = "#fff") {
     this.pos = new Vector2(x, y);
     this.vel = new Vector2(0, 0);
     this.acc = new Vector2(0, 0);
@@ -35,8 +35,8 @@ class Sprite {
     this.height = height;
     this.color = color;
     this.active = true;
-    this.tag = 'sprite';
-    this.renderShape = 'rect'; // 'rect', 'star', 'rune', or 'dollar'
+    this.tag = "sprite";
+    this.renderShape = "rect"; // 'rect', 'star', 'rune', or 'dollar'
   }
 
   update(dt) {
@@ -46,17 +46,17 @@ class Sprite {
   }
 
   render(ctx) {
-    if (this.renderShape === 'star') {
+    if (this.renderShape === "star") {
       this.renderStar(ctx);
       return;
     }
 
-    if (this.renderShape === 'rune') {
+    if (this.renderShape === "rune") {
       this.renderRune(ctx);
       return;
     }
 
-    if (this.renderShape === 'dollar') {
+    if (this.renderShape === "dollar") {
       this.renderDollar(ctx);
       return;
     }
@@ -99,25 +99,25 @@ class Sprite {
     ctx.save();
     ctx.strokeStyle = this.color; // use sprite's color
     ctx.lineWidth = Math.max(2, w * 0.12);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     // Main vertical stem (full height, top to bottom)
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.5, y + h * 0.10);
-    ctx.lineTo(x + w * 0.5, y + h * 0.90);
+    ctx.moveTo(x + w * 0.5, y + h * 0.1);
+    ctx.lineTo(x + w * 0.5, y + h * 0.9);
     ctx.stroke();
 
     // Left diagonal branch (from center, up and outward to upper-left)
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.5, y + h * 0.50);
-    ctx.lineTo(x + w * 0.15, y + h * 0.20);
+    ctx.moveTo(x + w * 0.5, y + h * 0.5);
+    ctx.lineTo(x + w * 0.15, y + h * 0.2);
     ctx.stroke();
 
     // Right diagonal branch (from center, up and outward to upper-right)
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.5, y + h * 0.50);
-    ctx.lineTo(x + w * 0.85, y + h * 0.20);
+    ctx.moveTo(x + w * 0.5, y + h * 0.5);
+    ctx.lineTo(x + w * 0.85, y + h * 0.2);
     ctx.stroke();
 
     ctx.restore();
@@ -135,9 +135,9 @@ class Sprite {
     ctx.save();
     ctx.fillStyle = this.color;
     ctx.font = `bold ${Math.max(14, h * 0.9)}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('$', cx, cy);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("$", cx, cy);
     ctx.restore();
   }
 
@@ -153,7 +153,12 @@ class Sprite {
   collidesWith(other) {
     const a = this.getBounds();
     const b = other.getBounds();
-    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+    return !(
+      a.right < b.left ||
+      a.left > b.right ||
+      a.bottom < b.top ||
+      a.top > b.bottom
+    );
   }
 
   setPosition(x, y) {
@@ -170,7 +175,7 @@ class Sprite {
 class GameEngine {
   constructor(canvasId, width = 800, height = 600) {
     this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext("2d");
     this.canvas.width = width;
     this.canvas.height = height;
     this.width = width;
@@ -186,10 +191,10 @@ class GameEngine {
   }
 
   setupInput() {
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener("keydown", (e) => {
       this.input[e.key.toLowerCase()] = true;
     });
-    document.addEventListener('keyup', (e) => {
+    document.addEventListener("keyup", (e) => {
       this.input[e.key.toLowerCase()] = false;
     });
   }
@@ -223,7 +228,7 @@ class GameEngine {
 
   render() {
     // Clear canvas
-    this.ctx.fillStyle = '#222';
+    this.ctx.fillStyle = "#222";
     this.ctx.fillRect(0, 0, this.width, this.height);
 
     // Render sprites
@@ -237,7 +242,10 @@ class GameEngine {
   gameLoop = (currentTime) => {
     // Calculate delta time
     if (this.lastFrameTime) {
-      this.deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.016); // cap at ~60fps
+      this.deltaTime = Math.min(
+        (currentTime - this.lastFrameTime) / 1000,
+        0.016,
+      ); // cap at ~60fps
     }
     this.lastFrameTime = currentTime;
 
@@ -267,6 +275,6 @@ class GameEngine {
 }
 
 // Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== "undefined" && module.exports) {
   module.exports = { GameEngine, Sprite, Vector2 };
 }

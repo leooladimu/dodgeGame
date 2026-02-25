@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 /**
  * Vector2: Simple 2D vector math
@@ -63,7 +63,7 @@ class Particle {
  * Sprite: Represents a game object
  */
 class Sprite {
-  constructor(x = 0, y = 0, width = 32, height = 32, color = '#fff') {
+  constructor(x = 0, y = 0, width = 32, height = 32, color = "#fff") {
     this.pos = new Vector2(x, y);
     this.vel = new Vector2(0, 0);
     this.acc = new Vector2(0, 0);
@@ -71,8 +71,8 @@ class Sprite {
     this.height = height;
     this.color = color;
     this.active = true;
-    this.tag = 'sprite';
-    this.renderShape = 'rect'; // 'rect' or 'star'
+    this.tag = "sprite";
+    this.renderShape = "rect"; // 'rect' or 'star'
     this.rotation = 0; // For rotation animation
     this.scale = 1; // For pulsing animation
     this.time = 0; // For animation timing
@@ -82,22 +82,22 @@ class Sprite {
     this.vel = this.vel.add(this.acc.mul(dt));
     this.pos = this.pos.add(this.vel.mul(dt));
     this.time += dt;
-    
+
     // Animate coins with pulse effect
-    if (this.tag === 'coin') {
+    if (this.tag === "coin") {
       this.scale = 1 + Math.sin(this.time * 4) * 0.15;
       this.rotation += dt * 2;
     }
-    
+
     // Animate enemies with rotation
-    if (this.tag === 'enemy') {
+    if (this.tag === "enemy") {
       this.rotation += dt * 2;
     }
   }
 
   render(ctx) {
     ctx.save();
-    
+
     // Apply transformations
     const cx = this.pos.x + this.width / 2;
     const cy = this.pos.y + this.height / 2;
@@ -105,77 +105,86 @@ class Sprite {
     ctx.rotate(this.rotation);
     ctx.scale(this.scale, this.scale);
     ctx.translate(-cx, -cy);
-    
+
     // Draw glow for coins
-    if (this.tag === 'coin') {
+    if (this.tag === "coin") {
       ctx.shadowBlur = 20;
-      ctx.shadowColor = '#00ff00';
+      ctx.shadowColor = "#00ff00";
     }
-    
+
     // Draw glow for player
-    if (this.tag === 'player') {
+    if (this.tag === "player") {
       ctx.shadowBlur = 15;
-      ctx.shadowColor = '#D2B48C';
+      ctx.shadowColor = "#D2B48C";
     }
-    
+
     // If this sprite has a custom render function, use it
-    if (this.renderShape === 'rune') {
+    if (this.renderShape === "rune") {
       this.renderRune(ctx);
-    } else if (this.renderShape === 'star') {
+    } else if (this.renderShape === "star") {
       this.renderStar(ctx);
-    } else if (this.tag === 'coin') {
+    } else if (this.tag === "coin") {
       this.renderCoin(ctx);
     } else {
       // Default: render as rectangle with gradient
       const gradient = ctx.createLinearGradient(
-        this.pos.x, this.pos.y,
-        this.pos.x + this.width, this.pos.y + this.height
+        this.pos.x,
+        this.pos.y,
+        this.pos.x + this.width,
+        this.pos.y + this.height,
       );
       gradient.addColorStop(0, this.color);
       gradient.addColorStop(1, this.darkenColor(this.color, 0.3));
       ctx.fillStyle = gradient;
       ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height);
     }
-    
+
     ctx.restore();
   }
-  
+
   darkenColor(color, amount) {
     // Simple color darkening
-    const num = parseInt(color.replace('#', ''), 16);
+    const num = parseInt(color.replace("#", ""), 16);
     const r = Math.max(0, ((num >> 16) & 0xff) * (1 - amount));
     const g = Math.max(0, ((num >> 8) & 0xff) * (1 - amount));
     const b = Math.max(0, (num & 0xff) * (1 - amount));
-    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
-  
+
   renderCoin(ctx) {
     // Draw a shiny coin with gradient
     const cx = this.pos.x + this.width / 2;
     const cy = this.pos.y + this.height / 2;
     const radius = this.width / 2;
-    
+
     // Outer glow
     const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.5);
-    glow.addColorStop(0, 'rgba(0, 255, 0, 0.3)');
-    glow.addColorStop(1, 'rgba(0, 255, 0, 0)');
+    glow.addColorStop(0, "rgba(0, 255, 0, 0.3)");
+    glow.addColorStop(1, "rgba(0, 255, 0, 0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * 1.5, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Main coin with gradient
-    const gradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 0, cx, cy, radius);
-    gradient.addColorStop(0, '#88ff88');
-    gradient.addColorStop(0.5, '#00ff00');
-    gradient.addColorStop(1, '#006600');
+    const gradient = ctx.createRadialGradient(
+      cx - radius * 0.3,
+      cy - radius * 0.3,
+      0,
+      cx,
+      cy,
+      radius,
+    );
+    gradient.addColorStop(0, "#88ff88");
+    gradient.addColorStop(0.5, "#00ff00");
+    gradient.addColorStop(1, "#006600");
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Highlight
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
     ctx.beginPath();
     ctx.arc(cx - radius * 0.3, cy - radius * 0.3, radius * 0.3, 0, Math.PI * 2);
     ctx.fill();
@@ -186,12 +195,12 @@ class Sprite {
     const cx = this.pos.x + this.width / 2;
     const cy = this.pos.y + this.height / 2;
     const size = this.width * 0.8;
-    
+
     ctx.fillStyle = this.color;
     ctx.font = `${size}px serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('ᛉ', cx, cy);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("ᛉ", cx, cy);
   }
 
   renderStar(ctx) {
@@ -202,18 +211,18 @@ class Sprite {
 
     // Create gradient for star
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    gradient.addColorStop(0, '#ff6666');
-    gradient.addColorStop(0.5, '#ff0101');
-    gradient.addColorStop(1, '#aa0000');
+    gradient.addColorStop(0, "#ff6666");
+    gradient.addColorStop(0.5, "#ff0101");
+    gradient.addColorStop(1, "#aa0000");
     ctx.fillStyle = gradient;
-    
+
     ctx.beginPath();
     for (let i = 0; i < 12; i++) {
       const angle = (i * Math.PI) / 6; // 6 points = 60 degrees apart
       const r = i % 2 === 0 ? radius : radius * 0.5; // Alternate between outer and inner points
       const x = cx + r * Math.cos(angle - Math.PI / 2);
       const y = cy + r * Math.sin(angle - Math.PI / 2);
-      
+
       if (i === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -222,10 +231,10 @@ class Sprite {
     }
     ctx.closePath();
     ctx.fill();
-    
+
     // Add red glow
     ctx.shadowBlur = 15;
-    ctx.shadowColor = '#ff0101';
+    ctx.shadowColor = "#ff0101";
     ctx.fill();
   }
 
@@ -241,7 +250,12 @@ class Sprite {
   collidesWith(other) {
     const a = this.getBounds();
     const b = other.getBounds();
-    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+    return !(
+      a.right < b.left ||
+      a.left > b.right ||
+      a.bottom < b.top ||
+      a.top > b.bottom
+    );
   }
 
   setPosition(x, y) {
@@ -277,21 +291,23 @@ class GameEngine {
     const idx = this.sprites.indexOf(sprite);
     if (idx > -1) this.sprites.splice(idx, 1);
   }
-  
+
   addParticle(particle) {
     this.particles.push(particle);
   }
-  
+
   spawnParticles(x, y, color, count = 10) {
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count;
       const speed = 100 + Math.random() * 100;
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed - 50;
-      this.addParticle(new Particle(x, y, vx, vy, color, 0.5 + Math.random() * 0.5));
+      this.addParticle(
+        new Particle(x, y, vx, vy, color, 0.5 + Math.random() * 0.5),
+      );
     }
   }
-  
+
   screenShake(intensity = 10) {
     this.shake = intensity;
   }
@@ -310,7 +326,7 @@ class GameEngine {
         sprite.update(dt);
       }
     }
-    
+
     // Update particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       this.particles[i].update(dt);
@@ -318,7 +334,7 @@ class GameEngine {
         this.particles.splice(i, 1);
       }
     }
-    
+
     // Decay screen shake
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 30);
@@ -333,13 +349,13 @@ class GameEngine {
       const shakeY = (Math.random() - 0.5) * this.shake;
       ctx.translate(shakeX, shakeY);
     }
-    
+
     // Background with grid
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, this.width, this.height);
-    
+
     // Draw grid pattern
-    ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
+    ctx.strokeStyle = "rgba(100, 100, 150, 0.1)";
     ctx.lineWidth = 1;
     const gridSize = 40;
     for (let x = 0; x < this.width; x += gridSize) {
@@ -361,12 +377,12 @@ class GameEngine {
         sprite.render(ctx);
       }
     }
-    
+
     // Render particles
     for (const particle of this.particles) {
       particle.render(ctx);
     }
-    
+
     ctx.restore();
   }
 
@@ -409,27 +425,32 @@ const DodgeGame = () => {
       const maxWidth = 800;
       const maxHeight = 600;
       const aspectRatio = maxWidth / maxHeight;
-      
+
       let width = Math.min(maxWidth, window.innerWidth - 40);
       let height = width / aspectRatio;
-      
+
       if (height > window.innerHeight - 200) {
         height = window.innerHeight - 200;
         width = height * aspectRatio;
       }
-      
+
       setCanvasSize({ width: Math.floor(width), height: Math.floor(height) });
-      
-      if (!engineRef.current || 
-          engineRef.current.width !== Math.floor(width) || 
-          engineRef.current.height !== Math.floor(height)) {
-        engineRef.current = new GameEngine(Math.floor(width), Math.floor(height));
+
+      if (
+        !engineRef.current ||
+        engineRef.current.width !== Math.floor(width) ||
+        engineRef.current.height !== Math.floor(height)
+      ) {
+        engineRef.current = new GameEngine(
+          Math.floor(width),
+          Math.floor(height),
+        );
       }
     };
-    
+
     updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
   }, []);
 
   const engine = engineRef.current;
@@ -442,17 +463,22 @@ const DodgeGame = () => {
 
     // Clear previous sprites
     engine.clear();
-    gameStateRef.current = { score: 0, gameOver: false, won: false, player: null };
+    gameStateRef.current = {
+      score: 0,
+      gameOver: false,
+      won: false,
+      player: null,
+    };
     setScore(0);
     setGameOver(false);
     setWon(false);
 
     // Create player
     const player = engine.addSprite(
-      new Sprite(engine.width / 2 - 16, engine.height / 2, 32, 32, '#D2B48C')
+      new Sprite(engine.width / 2 - 16, engine.height / 2, 32, 32, "#D2B48C"),
     );
-    player.tag = 'player';
-    player.renderShape = 'rune'; // Render as Algiz rune ᛉ
+    player.tag = "player";
+    player.renderShape = "rune"; // Render as Algiz rune ᛉ
     player.speed = 300;
     gameStateRef.current.player = player;
 
@@ -464,10 +490,10 @@ const DodgeGame = () => {
           Math.random() * (engine.height - 20),
           20,
           20,
-          '#00ff00'
-        )
+          "#00ff00",
+        ),
       );
-      coin.tag = 'coin';
+      coin.tag = "coin";
     }
     setCoinCount(5);
 
@@ -479,11 +505,11 @@ const DodgeGame = () => {
           Math.random() * (engine.height - 24),
           24,
           24,
-          '#ff0101'
-        )
+          "#ff0101",
+        ),
       );
-      enemy.tag = 'enemy';
-      enemy.renderShape = 'star'; // Render as 6-pointed star
+      enemy.tag = "enemy";
+      enemy.renderShape = "star"; // Render as 6-pointed star
       enemy.speed = 150 + Math.random() * 100;
       enemy.dirX = Math.random() > 0.5 ? 1 : -1;
       enemy.dirY = Math.random() > 0.5 ? 1 : -1;
@@ -495,7 +521,7 @@ const DodgeGame = () => {
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
-    
+
     const handleKeyDown = (e) => {
       engine.setInput(e.key, true);
     };
@@ -504,15 +530,15 @@ const DodgeGame = () => {
       engine.setInput(e.key, false);
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
-  
+
   // Handle touch controls
   useEffect(() => {
     const engine = engineRef.current;
@@ -532,48 +558,48 @@ const DodgeGame = () => {
     const handleTouchMove = (e) => {
       e.preventDefault();
       if (!touchStartRef.current || !gameStateRef.current.player) return;
-      
+
       const touch = e.touches[0];
       const rect = canvas.getBoundingClientRect();
       const touchX = touch.clientX - rect.left;
       const touchY = touch.clientY - rect.top;
-      
+
       const dx = touchX - touchStartRef.current.x;
       const dy = touchY - touchStartRef.current.y;
-      
+
       // Convert to movement direction
-      engine.setInput('arrowleft', false);
-      engine.setInput('arrowright', false);
-      engine.setInput('arrowup', false);
-      engine.setInput('arrowdown', false);
-      
+      engine.setInput("arrowleft", false);
+      engine.setInput("arrowright", false);
+      engine.setInput("arrowup", false);
+      engine.setInput("arrowdown", false);
+
       if (Math.abs(dx) > 10) {
-        engine.setInput(dx < 0 ? 'arrowleft' : 'arrowright', true);
+        engine.setInput(dx < 0 ? "arrowleft" : "arrowright", true);
       }
       if (Math.abs(dy) > 10) {
-        engine.setInput(dy < 0 ? 'arrowup' : 'arrowdown', true);
+        engine.setInput(dy < 0 ? "arrowup" : "arrowdown", true);
       }
-      
+
       touchStartRef.current = { x: touchX, y: touchY };
     };
 
     const handleTouchEnd = (e) => {
       e.preventDefault();
       touchStartRef.current = null;
-      engine.setInput('arrowleft', false);
-      engine.setInput('arrowright', false);
-      engine.setInput('arrowup', false);
-      engine.setInput('arrowdown', false);
+      engine.setInput("arrowleft", false);
+      engine.setInput("arrowright", false);
+      engine.setInput("arrowup", false);
+      engine.setInput("arrowdown", false);
     };
 
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
 
     return () => {
-      canvas.removeEventListener('touchstart', handleTouchStart);
-      canvas.removeEventListener('touchmove', handleTouchMove);
-      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
     };
   }, []);
 
@@ -583,12 +609,14 @@ const DodgeGame = () => {
     const engine = engineRef.current;
     if (!canvas || !engine) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     let animationId;
     let lastTime = 0;
 
     const gameLoop = (currentTime) => {
-      const dt = lastTime ? Math.min((currentTime - lastTime) / 1000, 0.016) : 0;
+      const dt = lastTime
+        ? Math.min((currentTime - lastTime) / 1000, 0.016)
+        : 0;
       lastTime = currentTime;
 
       // Update
@@ -596,37 +624,58 @@ const DodgeGame = () => {
         const player = gameStateRef.current.player;
 
         // Player movement
-        if (engine.isKeyPressed('arrowleft') || engine.isKeyPressed('a')) {
+        if (engine.isKeyPressed("arrowleft") || engine.isKeyPressed("a")) {
           player.vel.x = -player.speed;
-        } else if (engine.isKeyPressed('arrowright') || engine.isKeyPressed('d')) {
+        } else if (
+          engine.isKeyPressed("arrowright") ||
+          engine.isKeyPressed("d")
+        ) {
           player.vel.x = player.speed;
         } else {
           player.vel.x = 0;
         }
 
-        if (engine.isKeyPressed('arrowup') || engine.isKeyPressed('w')) {
+        if (engine.isKeyPressed("arrowup") || engine.isKeyPressed("w")) {
           player.vel.y = -player.speed;
-        } else if (engine.isKeyPressed('arrowdown') || engine.isKeyPressed('s')) {
+        } else if (
+          engine.isKeyPressed("arrowdown") ||
+          engine.isKeyPressed("s")
+        ) {
           player.vel.y = player.speed;
         } else {
           player.vel.y = 0;
         }
 
         engine.update(dt);
-        
+
         // Player trail effect
         if (Math.random() < 0.5 && (player.vel.x !== 0 || player.vel.y !== 0)) {
           const px = player.pos.x + player.width / 2;
           const py = player.pos.y + player.height / 2;
-          engine.addParticle(new Particle(px, py, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, '#D2B48C', 0.3));
+          engine.addParticle(
+            new Particle(
+              px,
+              py,
+              (Math.random() - 0.5) * 50,
+              (Math.random() - 0.5) * 50,
+              "#D2B48C",
+              0.3,
+            ),
+          );
         }
 
         // Clamp player to bounds
-        player.pos.x = Math.max(0, Math.min(player.pos.x, engine.width - player.width));
-        player.pos.y = Math.max(0, Math.min(player.pos.y, engine.height - player.height));
+        player.pos.x = Math.max(
+          0,
+          Math.min(player.pos.x, engine.width - player.width),
+        );
+        player.pos.y = Math.max(
+          0,
+          Math.min(player.pos.y, engine.height - player.height),
+        );
 
         // Update enemies
-        const enemies = engine.findSpritesWithTag('enemy');
+        const enemies = engine.findSpritesWithTag("enemy");
         for (const enemy of enemies) {
           enemy.vel.x = enemy.dirX * enemy.speed;
           enemy.vel.y = enemy.dirY * enemy.speed;
@@ -639,7 +688,7 @@ const DodgeGame = () => {
             enemy.pos.x = engine.width - enemy.width;
             enemy.dirX = -Math.abs(enemy.dirX); // Ensure negative direction
           }
-          
+
           if (enemy.pos.y <= 0) {
             enemy.pos.y = 0;
             enemy.dirY = Math.abs(enemy.dirY); // Ensure positive direction
@@ -650,15 +699,15 @@ const DodgeGame = () => {
         }
 
         // Coin collision
-        const coins = engine.findSpritesWithTag('coin');
+        const coins = engine.findSpritesWithTag("coin");
         for (const coin of coins) {
           if (player.collidesWith(coin)) {
             // Spawn particle explosion
             const cx = coin.pos.x + coin.width / 2;
             const cy = coin.pos.y + coin.height / 2;
-            engine.spawnParticles(cx, cy, '#00ff00', 15);
+            engine.spawnParticles(cx, cy, "#00ff00", 15);
             engine.screenShake(5);
-            
+
             engine.removeSprite(coin);
             const newScore = gameStateRef.current.score + 1;
             gameStateRef.current.score = newScore;
@@ -676,10 +725,10 @@ const DodgeGame = () => {
                   Math.random() * (engine.height - 20),
                   20,
                   20,
-                  '#00ff00'
-                )
+                  "#00ff00",
+                ),
               );
-              newCoin.tag = 'coin';
+              newCoin.tag = "coin";
             }
           }
         }
@@ -690,9 +739,9 @@ const DodgeGame = () => {
             // Spawn red explosion
             const px = player.pos.x + player.width / 2;
             const py = player.pos.y + player.height / 2;
-            engine.spawnParticles(px, py, '#ff0101', 20);
+            engine.spawnParticles(px, py, "#ff0101", 20);
             engine.screenShake(15);
-            
+
             gameStateRef.current.gameOver = true;
             setGameOver(true);
           }
@@ -704,33 +753,53 @@ const DodgeGame = () => {
 
       // Draw UI - Scale font size based on canvas size
       const scale = Math.min(engine.width / 800, 1);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = "#fff";
       ctx.font = `bold ${Math.floor(16 * scale)}px system-ui`;
-      ctx.fillText(`Score: ${gameStateRef.current.score}/${WIN_SCORE}`, 20 * scale, 30 * scale);
+      ctx.fillText(
+        `Score: ${gameStateRef.current.score}/${WIN_SCORE}`,
+        20 * scale,
+        30 * scale,
+      );
       ctx.font = `normal ${Math.floor(12 * scale)}px system-ui`;
-      ctx.fillText(`Coins: ${engine.findSpritesWithTag('coin').length}`, 20 * scale, 50 * scale);
-      ctx.fillText(`Enemies: ${engine.findSpritesWithTag('enemy').length}`, 20 * scale, 70 * scale);
+      ctx.fillText(
+        `Coins: ${engine.findSpritesWithTag("coin").length}`,
+        20 * scale,
+        50 * scale,
+      );
+      ctx.fillText(
+        `Enemies: ${engine.findSpritesWithTag("enemy").length}`,
+        20 * scale,
+        70 * scale,
+      );
 
       if (gameStateRef.current.gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, engine.width, engine.height);
-        ctx.fillStyle = '#ff0101';
+        ctx.fillStyle = "#ff0101";
         ctx.font = `bold ${Math.floor(48 * scale)}px system-ui`;
-        ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', engine.width / 2, engine.height / 2);
-        ctx.fillStyle = '#fff';
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", engine.width / 2, engine.height / 2);
+        ctx.fillStyle = "#fff";
         ctx.font = `normal ${Math.floor(20 * scale)}px system-ui`;
-        ctx.fillText('Tap to play again', engine.width / 2, engine.height / 2 + 40 * scale);
+        ctx.fillText(
+          "Tap to play again",
+          engine.width / 2,
+          engine.height / 2 + 40 * scale,
+        );
       } else if (gameStateRef.current.won) {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0, 0, engine.width, engine.height);
-        ctx.fillStyle = '#00ff00';
+        ctx.fillStyle = "#00ff00";
         ctx.font = `bold ${Math.floor(48 * scale)}px system-ui`;
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU WIN!', engine.width / 2, engine.height / 2);
-        ctx.fillStyle = '#fff';
+        ctx.textAlign = "center";
+        ctx.fillText("YOU WIN!", engine.width / 2, engine.height / 2);
+        ctx.fillStyle = "#fff";
         ctx.font = `normal ${Math.floor(20 * scale)}px system-ui`;
-        ctx.fillText('Tap to play again', engine.width / 2, engine.height / 2 + 40 * scale);
+        ctx.fillText(
+          "Tap to play again",
+          engine.width / 2,
+          engine.height / 2 + 40 * scale,
+        );
       }
 
       animationId = requestAnimationFrame(gameLoop);
@@ -753,13 +822,21 @@ const DodgeGame = () => {
         />
       </div>
       <div style={styles.info}>
-        <p><strong>Score: {score}/{WIN_SCORE}</strong></p>
+        <p>
+          <strong>
+            Score: {score}/{WIN_SCORE}
+          </strong>
+        </p>
         <div style={styles.controls}>
           <h3>How to Play</h3>
-          <p>Move your player (tan rune) to collect coins (green) and avoid enemies (red stars).</p>
           <p>
-            <strong>Desktop:</strong> <code style={styles.key}>←</code> <code style={styles.key}>→</code>{' '}
-            <code style={styles.key}>↑</code> <code style={styles.key}>↓</code> or{' '}
+            Move your player (tan rune) to collect coins (green) and avoid
+            enemies (red stars).
+          </p>
+          <p>
+            <strong>Desktop:</strong> <code style={styles.key}>←</code>{" "}
+            <code style={styles.key}>→</code> <code style={styles.key}>↑</code>{" "}
+            <code style={styles.key}>↓</code> or{" "}
             <code style={styles.key}>WASD</code>
           </p>
           <p>
@@ -775,63 +852,63 @@ const DodgeGame = () => {
 const styles = {
   container: {
     margin: 0,
-    padding: '10px',
-    background: '#111',
-    color: '#fff',
-    fontFamily: 'system-ui, sans-serif',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    width: '100%',
-    boxSizing: 'border-box',
+    padding: "10px",
+    background: "#111",
+    color: "#fff",
+    fontFamily: "system-ui, sans-serif",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    width: "100%",
+    boxSizing: "border-box",
   },
   title: {
-    marginBottom: '10px',
-    color: '#0170ff',
-    fontSize: 'clamp(1.2rem, 4vw, 2rem)',
-    textAlign: 'center',
+    marginBottom: "10px",
+    color: "#0170ff",
+    fontSize: "clamp(1.2rem, 4vw, 2rem)",
+    textAlign: "center",
   },
   gameContainer: {
-    position: 'relative',
-    marginBottom: '20px',
-    maxWidth: '100%',
-    touchAction: 'none',
+    position: "relative",
+    marginBottom: "20px",
+    maxWidth: "100%",
+    touchAction: "none",
   },
   canvas: {
-    display: 'block',
-    background: '#222',
-    border: '3px solid #0170ff',
-    cursor: 'none',
-    maxWidth: '100%',
-    height: 'auto',
-    touchAction: 'none',
+    display: "block",
+    background: "#222",
+    border: "3px solid #0170ff",
+    cursor: "none",
+    maxWidth: "100%",
+    height: "auto",
+    touchAction: "none",
   },
   info: {
-    textAlign: 'center',
-    maxWidth: '800px',
-    width: '100%',
+    textAlign: "center",
+    maxWidth: "800px",
+    width: "100%",
     lineHeight: 1.6,
-    color: '#aaa',
-    fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-    padding: '0 10px',
-    boxSizing: 'border-box',
+    color: "#aaa",
+    fontSize: "clamp(0.75rem, 2vw, 0.875rem)",
+    padding: "0 10px",
+    boxSizing: "border-box",
   },
   controls: {
-    marginTop: '15px',
-    padding: '15px',
-    background: '#1a1a1a',
-    border: '1px solid #444',
-    borderRadius: '4px',
+    marginTop: "15px",
+    padding: "15px",
+    background: "#1a1a1a",
+    border: "1px solid #444",
+    borderRadius: "4px",
   },
   key: {
-    background: '#333',
-    padding: '2px 6px',
-    borderRadius: '3px',
-    fontFamily: 'monospace',
-    marginRight: '4px',
-    fontSize: 'clamp(0.7rem, 1.5vw, 0.875rem)',
+    background: "#333",
+    padding: "2px 6px",
+    borderRadius: "3px",
+    fontFamily: "monospace",
+    marginRight: "4px",
+    fontSize: "clamp(0.7rem, 1.5vw, 0.875rem)",
   },
 };
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import DodgeGame from './GameEngine.jsx';
+import React from "react";
+import DodgeGame from "./GameEngine.jsx";
 
 function App() {
   return (
