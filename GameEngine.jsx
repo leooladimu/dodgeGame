@@ -782,7 +782,7 @@ const DodgeGame = () => {
         ctx.fillStyle = "#fff";
         ctx.font = `normal ${Math.floor(20 * scale)}px system-ui`;
         ctx.fillText(
-          "Tap to play again",
+          "Refresh to play again",
           engine.width / 2,
           engine.height / 2 + 40 * scale,
         );
